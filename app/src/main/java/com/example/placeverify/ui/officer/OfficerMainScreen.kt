@@ -10,7 +10,9 @@ import androidx.compose.material.icons.filled.Work
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.placeverify.data.MockData
+import com.example.placeverify.data.MisinformationReport
+import com.example.placeverify.data.PlacementOpportunity
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
 
 sealed class OfficerTab(val route: String, val title: String, val icon: ImageVector) {
@@ -26,6 +28,15 @@ fun OfficerMainScreen(
 ) {
     var selectedTab by remember { mutableStateOf<OfficerTab>(OfficerTab.Drives) }
     val tabs = listOf(OfficerTab.Drives, OfficerTab.Post, OfficerTab.Reports, OfficerTab.Eligibility)
+    val repository = remember { PlaceVerifyRepository() }
+
+    var opportunities by remember { mutableStateOf<List<PlacementOpportunity>>(emptyList()) }
+    var reports by remember { mutableStateOf<List<MisinformationReport>>(emptyList()) }
+
+    LaunchedEffect(selectedTab) {
+        opportunities = repository.getOpportunities()
+        reports = repository.getMisinformationReports()
+    }
 
     Scaffold(
         bottomBar = {
@@ -51,9 +62,9 @@ fun OfficerMainScreen(
     ) { innerPadding ->
         Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                is OfficerTab.Drives -> OfficerDrivesScreen(opportunities = MockData.opportunities)
+                is OfficerTab.Drives -> OfficerDrivesScreen(opportunities = opportunities)
                 is OfficerTab.Post -> CreateAnnouncementScreen(onPostSuccess = { selectedTab = OfficerTab.Drives })
-                is OfficerTab.Reports -> OfficerReportsScreen(reports = MockData.misinformationReports)
+                is OfficerTab.Reports -> OfficerReportsScreen(reports = reports)
                 is OfficerTab.Eligibility -> StudentEligibilityScreen()
             }
         }

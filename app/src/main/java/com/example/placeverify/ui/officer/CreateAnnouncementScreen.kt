@@ -9,9 +9,10 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.placeverify.data.MockData
 import com.example.placeverify.data.PlacementOpportunity
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
+import kotlinx.coroutines.launch
 
 @Composable
 fun CreateAnnouncementScreen(
@@ -25,6 +26,9 @@ fun CreateAnnouncementScreen(
     var eligibility by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var posted by remember { mutableStateOf(false) }
+
+    val repository = remember { PlaceVerifyRepository() }
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -118,9 +122,8 @@ fun CreateAnnouncementScreen(
         Button(
             onClick = {
                 if (companyName.isNotBlank() && title.isNotBlank()) {
-                    MockData.opportunities.add(
-                        0,
-                        PlacementOpportunity(
+                    coroutineScope.launch {
+                        val newOpp = PlacementOpportunity(
                             id = System.currentTimeMillis().toString(),
                             title = title,
                             companyName = companyName,
@@ -134,9 +137,10 @@ fun CreateAnnouncementScreen(
                             eligibilityCriteria = eligibility.ifBlank { "All streams CGPA >= 7.0" },
                             description = description.ifBlank { "Exciting career opportunity verified by university TPO." }
                         )
-                    )
-                    posted = true
-                    onPostSuccess()
+                        repository.addOpportunity(newOpp)
+                        posted = true
+                        onPostSuccess()
+                    }
                 }
             },
             modifier = Modifier

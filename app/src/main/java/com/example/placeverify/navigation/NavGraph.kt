@@ -1,13 +1,14 @@
 package com.example.placeverify.navigation
 
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.placeverify.data.MockData
+import com.example.placeverify.data.PlacementOpportunity
 import com.example.placeverify.data.UserRole
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.admin.AdminMainScreen
 import com.example.placeverify.ui.auth.LoginScreen
 import com.example.placeverify.ui.auth.RegisterScreen
@@ -21,6 +22,7 @@ import com.example.placeverify.ui.student.StudentMainScreen
 @Composable
 fun PlaceVerifyNavGraph() {
     val navController = rememberNavController()
+    val repository = remember { PlaceVerifyRepository() }
 
     NavHost(
         navController = navController,
@@ -121,14 +123,16 @@ fun PlaceVerifyNavGraph() {
             route = "opportunity_detail/{opportunityId}",
             arguments = listOf(navArgument("opportunityId") { type = NavType.StringType })
         ) { backStackEntry ->
-            val opportunityId = backStackEntry.arguments?.getString("opportunityId") ?: "1"
+            val opportunityId = backStackEntry.arguments?.getString("opportunityId") ?: ""
+            var opps by remember { mutableStateOf<List<PlacementOpportunity>>(emptyList()) }
+            LaunchedEffect(opportunityId) {
+                opps = repository.getOpportunities()
+            }
             OpportunityDetailScreen(
                 opportunityId = opportunityId,
-                opportunities = MockData.opportunities,
+                opportunities = opps,
                 onBack = { navController.popBackStack() },
-                onApply = { oppId ->
-                    // Handle apply action in mock data if needed
-                }
+                onApply = { oppId -> }
             )
         }
 

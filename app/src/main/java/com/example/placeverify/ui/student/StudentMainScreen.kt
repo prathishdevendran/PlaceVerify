@@ -1,7 +1,6 @@
 package com.example.placeverify.ui.student
 
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Assignment
@@ -10,10 +9,12 @@ import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.placeverify.data.MockData
+import com.example.placeverify.data.ApplicationItem
+import com.example.placeverify.data.NotificationItem
+import com.example.placeverify.data.PlacementOpportunity
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
 
 sealed class StudentTab(val route: String, val title: String, val icon: ImageVector) {
@@ -31,6 +32,17 @@ fun StudentMainScreen(
 ) {
     var selectedTab by remember { mutableStateOf<StudentTab>(StudentTab.Home) }
     val tabs = listOf(StudentTab.Home, StudentTab.Saved, StudentTab.Applications, StudentTab.Notifications)
+    val repository = remember { PlaceVerifyRepository() }
+
+    var opportunities by remember { mutableStateOf<List<PlacementOpportunity>>(emptyList()) }
+    var applications by remember { mutableStateOf<List<ApplicationItem>>(emptyList()) }
+    var notifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        opportunities = repository.getOpportunities()
+        applications = repository.getApplications()
+        notifications = repository.getNotifications()
+    }
 
     Scaffold(
         bottomBar = {
@@ -57,19 +69,19 @@ fun StudentMainScreen(
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedTab) {
                 is StudentTab.Home -> StudentHomeScreen(
-                    opportunities = MockData.opportunities,
+                    opportunities = opportunities,
                     onOpportunityClick = { opp -> onNavigateToDetail(opp.id) },
                     onReportClick = onReportSuspicious
                 )
                 is StudentTab.Saved -> SavedOpportunitiesScreen(
-                    opportunities = MockData.opportunities.filter { it.isSaved },
+                    opportunities = opportunities.filter { it.isSaved },
                     onOpportunityClick = { opp -> onNavigateToDetail(opp.id) }
                 )
                 is StudentTab.Applications -> ApplicationTrackerScreen(
-                    applications = MockData.applications
+                    applications = applications
                 )
                 is StudentTab.Notifications -> StudentNotificationsScreen(
-                    notifications = MockData.notifications
+                    notifications = notifications
                 )
             }
         }

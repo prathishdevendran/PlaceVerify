@@ -10,7 +10,9 @@ import androidx.compose.material.icons.filled.VerifiedUser
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.graphics.vector.ImageVector
-import com.example.placeverify.data.MockData
+import com.example.placeverify.data.MisinformationReport
+import com.example.placeverify.data.VerificationRequest
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
 
 sealed class AdminTab(val route: String, val title: String, val icon: ImageVector) {
@@ -26,6 +28,15 @@ fun AdminMainScreen(
 ) {
     var selectedTab by remember { mutableStateOf<AdminTab>(AdminTab.Analytics) }
     val tabs = listOf(AdminTab.Analytics, AdminTab.Verifications, AdminTab.Users, AdminTab.Misinformation)
+    val repository = remember { PlaceVerifyRepository() }
+
+    var verificationRequests by remember { mutableStateOf<List<VerificationRequest>>(emptyList()) }
+    var reports by remember { mutableStateOf<List<MisinformationReport>>(emptyList()) }
+
+    LaunchedEffect(selectedTab) {
+        verificationRequests = repository.getVerificationRequests()
+        reports = repository.getMisinformationReports()
+    }
 
     Scaffold(
         bottomBar = {
@@ -52,9 +63,9 @@ fun AdminMainScreen(
         Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
             when (selectedTab) {
                 is AdminTab.Analytics -> AdminDashboardScreen()
-                is AdminTab.Verifications -> AdminVerificationScreen(requests = MockData.verificationRequests)
+                is AdminTab.Verifications -> AdminVerificationScreen(requests = verificationRequests)
                 is AdminTab.Users -> AdminUserManagementScreen()
-                is AdminTab.Misinformation -> AdminMisinformationScreen(reports = MockData.misinformationReports)
+                is AdminTab.Misinformation -> AdminMisinformationScreen(reports = reports)
             }
         }
     }

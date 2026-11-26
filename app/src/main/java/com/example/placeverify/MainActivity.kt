@@ -10,7 +10,7 @@ import androidx.compose.ui.Modifier
 import com.example.placeverify.navigation.PlaceVerifyNavGraph
 import com.example.placeverify.ui.theme.PlaceVerifyTheme
 
-class MainActivity : ComponentActivity() {
+class   MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
