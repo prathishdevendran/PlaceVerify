@@ -9,11 +9,74 @@ class PlaceVerifyRepository {
     private val firestore = FirebaseFirestore.getInstance()
     private val auth = FirebaseAuth.getInstance()
 
-    // Auth
+    companion object {
+        var cachedProfile: UserProfile? = null
+    }
+
+    // Auth & Session
+    fun getCurrentUserId(): String? {
+        return auth.currentUser?.uid
+    }
+
+    suspend fun getCurrentUserProfile(): UserProfile? {
+        cachedProfile?.let { return it }
+        val uid = auth.currentUser?.uid ?: return null
+        return try {
+            val doc = firestore.collection("users").document(uid).get().await()
+            val profile = doc.toObject(UserProfile::class.java)?.copy(uid = uid)
+            if (profile != null && profile.name.isNotBlank()) {
+                cachedProfile = profile
+                profile
+            } else {
+                val user = auth.currentUser
+                val derivedName = user?.displayName?.ifBlank { null }
+                    ?: user?.email?.substringBefore("@")?.replace(".", " ")?.replaceFirstChar { it.uppercase() }
+                    ?: "User"
+                val fallback = UserProfile(
+                    uid = uid,
+                    name = derivedName,
+                    email = user?.email ?: "",
+                    role = "STUDENT",
+                    institution = "Campus Member"
+                )
+                cachedProfile = fallback
+                fallback
+            }
+        } catch (e: Exception) {
+            val user = auth.currentUser
+            user?.let {
+                val derivedName = it.displayName?.ifBlank { null }
+                    ?: it.email?.substringBefore("@")?.replace(".", " ")?.replaceFirstChar { it.uppercase() }
+                    ?: "User"
+                val fallback = UserProfile(
+                    uid = it.uid,
+                    name = derivedName,
+                    email = it.email ?: "",
+                    role = "STUDENT",
+                    institution = "Campus Member"
+                )
+                cachedProfile = fallback
+                fallback
+            }
+        }
+    }
+
+    fun signOut() {
+        cachedProfile = null
+        auth.signOut()
+    }
+
     suspend fun registerUser(name: String, email: String, pass: String, role: String, institution: String): Result<String> {
         return try {
             val authResult = auth.createUserWithEmailAndPassword(email, pass).await()
             val uid = authResult.user?.uid ?: System.currentTimeMillis().toString()
+            val profile = UserProfile(
+                uid = uid,
+                name = name,
+                email = email,
+                role = role,
+                institution = institution
+            )
             val userData = mapOf(
                 "uid" to uid,
                 "name" to name,
@@ -23,6 +86,7 @@ class PlaceVerifyRepository {
                 "createdAt" to System.currentTimeMillis()
             )
             firestore.collection("users").document(uid).set(userData).await()
+            cachedProfile = profile
             Result.success(uid)
         } catch (e: Exception) {
             Result.failure(e)
@@ -33,6 +97,8 @@ class PlaceVerifyRepository {
         return try {
             val authResult = auth.signInWithEmailAndPassword(email, pass).await()
             val uid = authResult.user?.uid ?: ""
+            cachedProfile = null
+            getCurrentUserProfile() // Preload into memory cache immediately
             Result.success(uid)
         } catch (e: Exception) {
             Result.failure(e)

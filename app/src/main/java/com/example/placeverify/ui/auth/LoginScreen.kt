@@ -22,7 +22,6 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.placeverify.data.UserRole
 import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.CardBorder
 import com.example.placeverify.ui.theme.DeepNavy
@@ -34,10 +33,8 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
-    role: UserRole,
-    onLoginSuccess: (UserRole) -> Unit,
-    onNavigateToRegister: (UserRole) -> Unit,
-    onBack: () -> Unit
+    onLoginSuccess: (String) -> Unit,
+    onNavigateToRegisterRoleSelection: () -> Unit
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
@@ -47,12 +44,6 @@ fun LoginScreen(
 
     val repository = remember { PlaceVerifyRepository() }
     val coroutineScope = rememberCoroutineScope()
-
-    val roleTitle = when (role) {
-        UserRole.STUDENT -> "Student Portal"
-        UserRole.PLACEMENT_OFFICER -> "Placement Officer Portal"
-        UserRole.SUPER_ADMIN -> "Super Admin Portal"
-    }
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -81,7 +72,7 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             Text(
-                text = "Sign In",
+                text = "Welcome to PlaceVerify",
                 style = MaterialTheme.typography.headlineLarge.copy(
                     fontWeight = FontWeight.Bold,
                     letterSpacing = 0.5.sp
@@ -92,14 +83,14 @@ fun LoginScreen(
             Spacer(modifier = Modifier.height(4.dp))
 
             Text(
-                text = roleTitle,
+                text = "Sign in to access verified placement updates",
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
             Spacer(modifier = Modifier.height(28.dp))
 
-            // Error alert box if authentication fails
+            // Error alert box
             errorMessage?.let { error ->
                 Surface(
                     color = ErrorRed.copy(alpha = 0.1f),
@@ -116,7 +107,7 @@ fun LoginScreen(
                 Spacer(modifier = Modifier.height(16.dp))
             }
 
-            // White Input Fields
+            // Input Fields
             OutlinedTextField(
                 value = email,
                 onValueChange = {
@@ -178,12 +169,15 @@ fun LoginScreen(
                     errorMessage = null
                     coroutineScope.launch {
                         val result = repository.loginUser(email.trim(), password)
-                        isLoading = false
                         if (result.isSuccess) {
-                            onLoginSuccess(role)
+                            val userProfile = repository.getCurrentUserProfile()
+                            val userRole = userProfile?.role ?: "STUDENT"
+                            isLoading = false
+                            onLoginSuccess(userRole)
                         } else {
+                            isLoading = false
                             errorMessage = result.exceptionOrNull()?.localizedMessage
-                                ?: "Authentication failed. Account not found or wrong password. Please register first."
+                                ?: "Authentication failed. Incorrect email/password or account not found."
                         }
                     }
                 },
@@ -223,7 +217,7 @@ fun LoginScreen(
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                TextButton(onClick = { onNavigateToRegister(role) }) {
+                TextButton(onClick = onNavigateToRegisterRoleSelection) {
                     Text(
                         text = "Register",
                         style = MaterialTheme.typography.bodyMedium.copy(
@@ -232,16 +226,6 @@ fun LoginScreen(
                         color = RoyalBlue
                     )
                 }
-            }
-
-            Spacer(modifier = Modifier.height(8.dp))
-
-            TextButton(onClick = onBack) {
-                Text(
-                    text = "Back to Role Selection",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
             }
         }
     }

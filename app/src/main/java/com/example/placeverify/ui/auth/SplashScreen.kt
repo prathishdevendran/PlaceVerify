@@ -17,12 +17,14 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
 import com.example.placeverify.ui.theme.RoyalBlue
 import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
+    onNavigateToDashboard: (String) -> Unit,
     onNavigateToRoleSelection: () -> Unit
 ) {
     var startAnimation by remember { mutableStateOf(false) }
@@ -32,10 +34,19 @@ fun SplashScreen(
         label = "splash_alpha"
     )
 
+    val repository = remember { PlaceVerifyRepository() }
+
     LaunchedEffect(key1 = true) {
         startAnimation = true
-        delay(2200)
-        onNavigateToRoleSelection()
+        delay(2000)
+        val currentUserId = repository.getCurrentUserId()
+        if (currentUserId != null) {
+            val userProfile = repository.getCurrentUserProfile()
+            val role = userProfile?.role ?: "STUDENT"
+            onNavigateToDashboard(role)
+        } else {
+            onNavigateToRoleSelection()
+        }
     }
 
     Box(

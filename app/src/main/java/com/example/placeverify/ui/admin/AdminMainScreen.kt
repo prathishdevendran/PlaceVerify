@@ -24,10 +24,15 @@ sealed class AdminTab(val route: String, val title: String, val icon: ImageVecto
 
 @Composable
 fun AdminMainScreen(
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf<AdminTab>(AdminTab.Analytics) }
-    val tabs = listOf(AdminTab.Analytics, AdminTab.Verifications, AdminTab.Users, AdminTab.Misinformation)
+    val tabs = listOf(
+        AdminTab.Analytics,
+        AdminTab.Verifications,
+        AdminTab.Users,
+        AdminTab.Misinformation
+    )
     val repository = remember { PlaceVerifyRepository() }
 
     var verificationRequests by remember { mutableStateOf<List<VerificationRequest>>(emptyList()) }
@@ -62,7 +67,7 @@ fun AdminMainScreen(
     ) { innerPadding ->
         Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                is AdminTab.Analytics -> AdminDashboardScreen()
+                is AdminTab.Analytics -> AdminDashboardScreen(onProfileClick = onNavigateToProfile)
                 is AdminTab.Verifications -> AdminVerificationScreen(requests = verificationRequests)
                 is AdminTab.Users -> AdminUserManagementScreen()
                 is AdminTab.Misinformation -> AdminMisinformationScreen(reports = reports)

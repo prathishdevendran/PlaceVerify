@@ -1,18 +1,25 @@
 package com.example.placeverify.ui.admin
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.placeverify.ui.theme.DeepNavy
 
 @Composable
-fun AdminDashboardScreen() {
+fun AdminDashboardScreen(
+    onProfileClick: () -> Unit
+) {
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -20,18 +27,43 @@ fun AdminDashboardScreen() {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Super Admin Analytics",
-            style = MaterialTheme.typography.titleLarge.copy(
-                fontWeight = FontWeight.Bold
-            ),
-            color = DeepNavy
-        )
-        Text(
-            text = "Platform-wide recruitment intelligence & scam defense metrics",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
+                Text(
+                    text = "Super Admin Analytics",
+                    style = MaterialTheme.typography.titleLarge.copy(
+                        fontWeight = FontWeight.Bold
+                    ),
+                    color = DeepNavy
+                )
+                Text(
+                    text = "Platform-wide recruitment intelligence & scam defense metrics",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Surface(
+                shape = CircleShape,
+                color = DeepNavy.copy(alpha = 0.1f),
+                modifier = Modifier
+                    .size(42.dp)
+                    .clickable(onClick = onProfileClick)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = DeepNavy,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
+            }
+        }
 
         Row(
             modifier = Modifier.fillMaxWidth(),

@@ -15,6 +15,7 @@ import com.example.placeverify.ui.auth.RegisterScreen
 import com.example.placeverify.ui.auth.RoleSelectionScreen
 import com.example.placeverify.ui.auth.SplashScreen
 import com.example.placeverify.ui.officer.OfficerMainScreen
+import com.example.placeverify.ui.profile.UserProfileScreen
 import com.example.placeverify.ui.student.OpportunityDetailScreen
 import com.example.placeverify.ui.student.ReportSuspiciousScreen
 import com.example.placeverify.ui.student.StudentMainScreen
@@ -30,42 +31,50 @@ fun PlaceVerifyNavGraph() {
     ) {
         composable("splash") {
             SplashScreen(
+                onNavigateToDashboard = { role ->
+                    val destination = when (role.uppercase()) {
+                        "PLACEMENT_OFFICER" -> "officer_main"
+                        "SUPER_ADMIN" -> "admin_main"
+                        else -> "student_main"
+                    }
+                    navController.navigate(destination) {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                },
                 onNavigateToRoleSelection = {
-                    navController.navigate("role_selection") {
+                    navController.navigate("login") {
                         popUpTo("splash") { inclusive = true }
                     }
                 }
             )
         }
 
-        composable("role_selection") {
-            RoleSelectionScreen(
-                onRoleSelected = { role ->
-                    navController.navigate("login/${role.name}")
+        composable("login") {
+            LoginScreen(
+                onLoginSuccess = { userRole ->
+                    val destination = when (userRole.uppercase()) {
+                        "PLACEMENT_OFFICER" -> "officer_main"
+                        "SUPER_ADMIN" -> "admin_main"
+                        else -> "student_main"
+                    }
+                    navController.navigate(destination) {
+                        popUpTo("login") { inclusive = true }
+                    }
+                },
+                onNavigateToRegisterRoleSelection = {
+                    navController.navigate("register_role_selection")
                 }
             )
         }
 
-        composable(
-            route = "login/{role}",
-            arguments = listOf(navArgument("role") { type = NavType.StringType })
-        ) { backStackEntry ->
-            val roleStr = backStackEntry.arguments?.getString("role") ?: UserRole.STUDENT.name
-            val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.STUDENT }
-
-            LoginScreen(
-                role = role,
-                onLoginSuccess = { selectedRole ->
-                    when (selectedRole) {
-                        UserRole.STUDENT -> navController.navigate("student_main") { popUpTo("role_selection") { inclusive = true } }
-                        UserRole.PLACEMENT_OFFICER -> navController.navigate("officer_main") { popUpTo("role_selection") { inclusive = true } }
-                        UserRole.SUPER_ADMIN -> navController.navigate("admin_main") { popUpTo("role_selection") { inclusive = true } }
-                    }
+        composable("register_role_selection") {
+            RoleSelectionScreen(
+                onRoleSelected = { role ->
+                    navController.navigate("register/${role.name}")
                 },
-                onNavigateToRegister = { regRole ->
-                    navController.navigate("register/${regRole.name}")
-                },
-                onBack = { navController.popBackStack() }
+                onBackToLogin = {
+                    navController.popBackStack()
+                }
             )
         }
 
@@ -79,13 +88,16 @@ fun PlaceVerifyNavGraph() {
             RegisterScreen(
                 role = role,
                 onRegisterSuccess = { regRole ->
-                    when (regRole) {
-                        UserRole.STUDENT -> navController.navigate("student_main") { popUpTo("role_selection") { inclusive = true } }
-                        UserRole.PLACEMENT_OFFICER -> navController.navigate("officer_main") { popUpTo("role_selection") { inclusive = true } }
-                        UserRole.SUPER_ADMIN -> navController.navigate("admin_main") { popUpTo("role_selection") { inclusive = true } }
+                    val destination = when (regRole) {
+                        UserRole.PLACEMENT_OFFICER -> "officer_main"
+                        UserRole.SUPER_ADMIN -> "admin_main"
+                        else -> "student_main"
+                    }
+                    navController.navigate(destination) {
+                        popUpTo("login") { inclusive = true }
                     }
                 },
-                onBackToLogin = { navController.popBackStack() }
+                onBackToLogin = { navController.navigate("login") { popUpTo("login") { inclusive = true } } }
             )
         }
 
@@ -94,27 +106,38 @@ fun PlaceVerifyNavGraph() {
                 onNavigateToDetail = { oppId ->
                     navController.navigate("opportunity_detail/$oppId")
                 },
-                onReportSuspicious = {
-                    navController.navigate("report_suspicious")
-                },
-                onLogout = {
-                    navController.navigate("role_selection") { popUpTo("student_main") { inclusive = true } }
+                onNavigateToProfile = {
+                    navController.navigate("user_profile")
                 }
             )
         }
 
         composable("officer_main") {
             OfficerMainScreen(
-                onLogout = {
-                    navController.navigate("role_selection") { popUpTo("officer_main") { inclusive = true } }
+                onNavigateToProfile = {
+                    navController.navigate("user_profile")
                 }
             )
         }
 
         composable("admin_main") {
             AdminMainScreen(
+                onNavigateToProfile = {
+                    navController.navigate("user_profile")
+                }
+            )
+        }
+
+        composable("user_profile") {
+            UserProfileScreen(
                 onLogout = {
-                    navController.navigate("role_selection") { popUpTo("admin_main") { inclusive = true } }
+                    navController.navigate("login") {
+                        popUpTo(0) { inclusive = true }
+                    }
+                },
+                onBack = { navController.popBackStack() },
+                onReportSuspicious = {
+                    navController.navigate("report_suspicious")
                 }
             )
         }

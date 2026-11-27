@@ -24,10 +24,15 @@ sealed class OfficerTab(val route: String, val title: String, val icon: ImageVec
 
 @Composable
 fun OfficerMainScreen(
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf<OfficerTab>(OfficerTab.Drives) }
-    val tabs = listOf(OfficerTab.Drives, OfficerTab.Post, OfficerTab.Reports, OfficerTab.Eligibility)
+    val tabs = listOf(
+        OfficerTab.Drives,
+        OfficerTab.Post,
+        OfficerTab.Reports,
+        OfficerTab.Eligibility
+    )
     val repository = remember { PlaceVerifyRepository() }
 
     var opportunities by remember { mutableStateOf<List<PlacementOpportunity>>(emptyList()) }
@@ -62,7 +67,10 @@ fun OfficerMainScreen(
     ) { innerPadding ->
         Box(modifier = androidx.compose.ui.Modifier.padding(innerPadding)) {
             when (selectedTab) {
-                is OfficerTab.Drives -> OfficerDrivesScreen(opportunities = opportunities)
+                is OfficerTab.Drives -> OfficerDrivesScreen(
+                    opportunities = opportunities,
+                    onProfileClick = onNavigateToProfile
+                )
                 is OfficerTab.Post -> CreateAnnouncementScreen(onPostSuccess = { selectedTab = OfficerTab.Drives })
                 is OfficerTab.Reports -> OfficerReportsScreen(reports = reports)
                 is OfficerTab.Eligibility -> StudentEligibilityScreen()

@@ -1,14 +1,14 @@
 package com.example.placeverify.ui.student
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ReportProblem
+import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.*
@@ -18,7 +18,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.placeverify.data.PlacementOpportunity
 import com.example.placeverify.ui.theme.DeepNavy
 import com.example.placeverify.ui.theme.SuccessGreen
@@ -28,7 +27,7 @@ import com.example.placeverify.ui.theme.WarningAmber
 fun StudentHomeScreen(
     opportunities: List<PlacementOpportunity>,
     onOpportunityClick: (PlacementOpportunity) -> Unit,
-    onReportClick: () -> Unit
+    onProfileClick: () -> Unit
 ) {
     var searchQuery by remember { mutableStateOf("") }
     var selectedFilter by remember { mutableStateOf("All") }
@@ -53,7 +52,7 @@ fun StudentHomeScreen(
             .fillMaxSize()
             .padding(16.dp)
     ) {
-        // Top Header Banner
+        // Top Header Banner with Profile Icon on Top Right
         Row(
             modifier = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -74,15 +73,21 @@ fun StudentHomeScreen(
                 )
             }
 
-            IconButton(
-                onClick = onReportClick,
-                colors = IconButtonDefaults.iconButtonColors(containerColor = MaterialTheme.colorScheme.errorContainer)
+            Surface(
+                shape = CircleShape,
+                color = DeepNavy.copy(alpha = 0.1f),
+                modifier = Modifier
+                    .size(42.dp)
+                    .clickable(onClick = onProfileClick)
             ) {
-                Icon(
-                    imageVector = Icons.Default.ReportProblem,
-                    contentDescription = "Report Scam",
-                    tint = MaterialTheme.colorScheme.error
-                )
+                Box(contentAlignment = Alignment.Center) {
+                    Icon(
+                        imageVector = Icons.Default.Person,
+                        contentDescription = "Profile",
+                        tint = DeepNavy,
+                        modifier = Modifier.size(24.dp)
+                    )
+                }
             }
         }
 

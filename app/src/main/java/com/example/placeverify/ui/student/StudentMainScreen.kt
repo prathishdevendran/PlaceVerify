@@ -3,7 +3,7 @@ package com.example.placeverify.ui.student
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Assignment
+import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Notifications
@@ -20,25 +20,34 @@ import com.example.placeverify.ui.theme.DeepNavy
 sealed class StudentTab(val route: String, val title: String, val icon: ImageVector) {
     object Home : StudentTab("home", "Drives", Icons.Default.Home)
     object Saved : StudentTab("saved", "Saved", Icons.Default.Bookmark)
-    object Applications : StudentTab("applications", "Applications", Icons.Default.Assignment)
+    object Applications : StudentTab("applications", "Applications", Icons.AutoMirrored.Filled.Assignment)
     object Notifications : StudentTab("notifications", "Alerts", Icons.Default.Notifications)
 }
 
 @Composable
 fun StudentMainScreen(
     onNavigateToDetail: (String) -> Unit,
-    onReportSuspicious: () -> Unit,
-    onLogout: () -> Unit
+    onNavigateToProfile: () -> Unit
 ) {
     var selectedTab by remember { mutableStateOf<StudentTab>(StudentTab.Home) }
-    val tabs = listOf(StudentTab.Home, StudentTab.Saved, StudentTab.Applications, StudentTab.Notifications)
+    val tabs = listOf(
+        StudentTab.Home,
+        StudentTab.Saved,
+        StudentTab.Applications,
+        StudentTab.Notifications
+    )
     val repository = remember { PlaceVerifyRepository() }
 
     var opportunities by remember { mutableStateOf<List<PlacementOpportunity>>(emptyList()) }
     var applications by remember { mutableStateOf<List<ApplicationItem>>(emptyList()) }
     var notifications by remember { mutableStateOf<List<NotificationItem>>(emptyList()) }
 
+    // Preload user profile into memory cache immediately on portal load
     LaunchedEffect(Unit) {
+        repository.getCurrentUserProfile()
+    }
+
+    LaunchedEffect(selectedTab) {
         opportunities = repository.getOpportunities()
         applications = repository.getApplications()
         notifications = repository.getNotifications()
@@ -71,7 +80,7 @@ fun StudentMainScreen(
                 is StudentTab.Home -> StudentHomeScreen(
                     opportunities = opportunities,
                     onOpportunityClick = { opp -> onNavigateToDetail(opp.id) },
-                    onReportClick = onReportSuspicious
+                    onProfileClick = onNavigateToProfile
                 )
                 is StudentTab.Saved -> SavedOpportunitiesScreen(
                     opportunities = opportunities.filter { it.isSaved },
