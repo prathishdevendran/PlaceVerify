@@ -10,6 +10,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.placeverify.ui.theme.DeepNavy
+import com.example.placeverify.data.MisinformationReport
+import com.example.placeverify.data.repository.PlaceVerifyRepository
+import kotlinx.coroutines.launch
+import java.util.UUID
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -21,6 +28,10 @@ fun ReportSuspiciousScreen(
     var company by remember { mutableStateOf("") }
     var reason by remember { mutableStateOf("") }
     var submitted by remember { mutableStateOf(false) }
+    var submitting by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val repository = remember { PlaceVerifyRepository() }
+    val scope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -77,10 +88,23 @@ fun ReportSuspiciousScreen(
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             Button(
+                enabled = !submitting && title.isNotBlank() && company.isNotBlank() && reason.isNotBlank(),
                 onClick = {
-                    submitted = true
-                    onSubmitSuccess()
+                    scope.launch {
+                        submitting = true
+                        error = null
+                        try {
+                            repository.addMisinformationReport(MisinformationReport(
+                                id = UUID.randomUUID().toString(), title = title.trim(), companyName = company.trim(),
+                                reason = reason.trim(), date = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date())
+                            ))
+                            submitted = true
+                            onSubmitSuccess()
+                        } catch (e: Exception) { error = e.localizedMessage ?: "Could not submit your report." }
+                        finally { submitting = false }
+                    }
                 },
                 modifier = Modifier
                     .fillMaxWidth()

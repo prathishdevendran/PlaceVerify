@@ -10,6 +10,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.placeverify.data.VerificationRequest
+import com.example.placeverify.data.repository.PlaceVerifyRepository
+import kotlinx.coroutines.launch
 import com.example.placeverify.ui.theme.DeepNavy
 import com.example.placeverify.ui.theme.SuccessGreen
 
@@ -17,7 +19,24 @@ import com.example.placeverify.ui.theme.SuccessGreen
 fun AdminVerificationScreen(
     requests: List<VerificationRequest>
 ) {
-    var requestList by remember { mutableStateOf(requests) }
+    val repository = remember { PlaceVerifyRepository() }
+    val scope = rememberCoroutineScope()
+    var notes by remember { mutableStateOf(mapOf<String, String>()) }
+    var reviewed by remember { mutableStateOf(setOf<String>()) }
+    var pending by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
+    val requestList = requests.filterNot { it.id in reviewed }
+    fun review(id: String, approved: Boolean) {
+        scope.launch {
+            pending = id
+            error = null
+            try {
+                repository.reviewDrive(id, approved, notes[id].orEmpty())
+                reviewed = reviewed + id
+            } catch (e: Exception) { error = e.localizedMessage ?: "Unable to review this announcement." }
+            finally { pending = null }
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -37,6 +56,7 @@ fun AdminVerificationScreen(
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
 
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
         Spacer(modifier = Modifier.height(16.dp))
 
         if (requestList.isEmpty()) {
@@ -112,35 +132,15 @@ fun AdminVerificationScreen(
 
                             Spacer(modifier = Modifier.height(12.dp))
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(12.dp)
-                            ) {
-                                OutlinedButton(
-                                    onClick = {
-                                        requestList = requestList.map {
-                                            if (it.id == req.id) it.copy(status = "Rejected") else it
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                                ) {
-                                    Text("Reject")
-                                }
-
-                                Button(
-                                    onClick = {
-                                        requestList = requestList.map {
-                                            if (it.id == req.id) it.copy(status = "Approved") else it
-                                        }
-                                    },
-                                    modifier = Modifier.weight(1f),
-                                    shape = RoundedCornerShape(10.dp),
-                                    colors = ButtonDefaults.buttonColors(containerColor = DeepNavy)
-                                ) {
-                                    Text("Approve")
-                                }
+                            OutlinedTextField(
+                                value = notes[req.id].orEmpty(),
+                                onValueChange = { notes = notes + (req.id to it) },
+                                label = { Text("Supporting evidence or rejection reason") },
+                                modifier = Modifier.fillMaxWidth()
+                            )
+                            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                                OutlinedButton(onClick = { review(req.id, false) }, enabled = pending == null && notes[req.id].orEmpty().isNotBlank(), modifier = Modifier.weight(1f)) { Text("Reject") }
+                                Button(onClick = { review(req.id, true) }, enabled = pending == null && notes[req.id].orEmpty().isNotBlank(), modifier = Modifier.weight(1f)) { Text("Approve") }
                             }
                         }
                     }

@@ -20,6 +20,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.placeverify.data.PlacementOpportunity
+import com.example.placeverify.data.ApplicationItem
+import com.example.placeverify.data.repository.PlaceVerifyRepository
+import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 import com.example.placeverify.ui.theme.DeepNavy
 import com.example.placeverify.ui.theme.SuccessGreen
 import com.example.placeverify.ui.theme.WarningAmber
@@ -32,9 +38,23 @@ fun OpportunityDetailScreen(
     onBack: () -> Unit,
     onApply: (String) -> Unit
 ) {
-    val opportunity = opportunities.find { it.id == opportunityId } ?: opportunities.first()
-    var isSaved by remember { mutableStateOf(opportunity.isSaved) }
-    var applied by remember { mutableStateOf(opportunity.appliedStatus != null) }
+    val opportunity = opportunities.find { it.id == opportunityId }
+    if (opportunity == null) {
+        Column { Text("Announcement is unavailable or still loading."); TextButton(onClick = onBack) { Text("Back") } }
+        return
+    }
+    val repository = remember { PlaceVerifyRepository() }
+    val scope = rememberCoroutineScope()
+    var isSaved by remember(opportunityId) { mutableStateOf(false) }
+    var applied by remember(opportunityId) { mutableStateOf(false) }
+    var busy by remember { mutableStateOf(false) }
+    var error by remember { mutableStateOf<String?>(null) }
+    LaunchedEffect(opportunityId) {
+        try {
+            isSaved = opportunityId in repository.savedPlacementIds()
+            applied = repository.getApplications().any { it.opportunityId == opportunityId }
+        } catch (e: Exception) { error = e.localizedMessage ?: "Unable to load your saved data." }
+    }
 
     Scaffold(
         topBar = {
@@ -46,7 +66,14 @@ fun OpportunityDetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { isSaved = !isSaved }) {
+                    IconButton(enabled = !busy, onClick = {
+                        scope.launch {
+                            busy = true; error = null
+                            try { repository.setPlacementSaved(opportunity.id, !isSaved); isSaved = !isSaved }
+                            catch (e: Exception) { error = e.localizedMessage ?: "Unable to save this announcement." }
+                            finally { busy = false }
+                        }
+                    }) {
                         Icon(
                             imageVector = if (isSaved) Icons.Default.Bookmark else Icons.Default.BookmarkBorder,
                             contentDescription = "Save",
@@ -69,10 +96,20 @@ fun OpportunityDetailScreen(
                 ) {
                     Button(
                         onClick = {
-                            applied = true
-                            onApply(opportunity.id)
+                            scope.launch {
+                                busy = true; error = null
+                                try {
+                                    val uid = repository.getCurrentUserId() ?: throw IllegalStateException("Please sign in.")
+                                    repository.addApplication(ApplicationItem(id = "${uid}_${opportunity.id}", opportunityId = opportunity.id,
+                                        opportunityTitle = opportunity.title, companyName = opportunity.companyName,
+                                        appliedDate = SimpleDateFormat("yyyy-MM-dd", Locale.US).format(Date()), ctc = opportunity.ctc))
+                                    applied = true
+                                    onApply(opportunity.id)
+                                } catch (e: Exception) { error = e.localizedMessage ?: "Unable to save the application." }
+                                finally { busy = false }
+                            }
                         },
-                        enabled = !applied,
+                        enabled = !applied && !busy,
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(50.dp),
@@ -101,6 +138,7 @@ fun OpportunityDetailScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
+            error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
             // Company & Title
             Text(
                 text = opportunity.companyName,

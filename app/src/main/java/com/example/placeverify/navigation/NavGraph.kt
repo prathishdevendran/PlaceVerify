@@ -82,8 +82,7 @@ fun PlaceVerifyNavGraph() {
             route = "register/{role}",
             arguments = listOf(navArgument("role") { type = NavType.StringType })
         ) { backStackEntry ->
-            val roleStr = backStackEntry.arguments?.getString("role") ?: UserRole.STUDENT.name
-            val role = try { UserRole.valueOf(roleStr) } catch (e: Exception) { UserRole.STUDENT }
+            val role = UserRole.STUDENT
 
             RegisterScreen(
                 role = role,

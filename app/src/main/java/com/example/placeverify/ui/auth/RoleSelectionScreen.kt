@@ -59,12 +59,7 @@ fun RoleSelectionScreen(
 
             Spacer(modifier = Modifier.height(16.dp))
 
-            RoleCard(
-                title = "Placement Officer",
-                description = "Post verified recruitment drives, manage campus eligibility & review reports.",
-                icon = Icons.Default.VerifiedUser,
-                onClick = { onRoleSelected(UserRole.PLACEMENT_OFFICER) }
-            )
+            Text("Placement officer access is assigned by your administrator.", style = MaterialTheme.typography.bodyMedium)
 
             Spacer(modifier = Modifier.height(28.dp))
 

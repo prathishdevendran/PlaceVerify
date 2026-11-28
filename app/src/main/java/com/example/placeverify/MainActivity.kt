@@ -13,6 +13,7 @@ import com.example.placeverify.ui.theme.PlaceVerifyTheme
 class   MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        FirebaseEnvironment.configure()
         enableEdgeToEdge()
         setContent {
             PlaceVerifyTheme {

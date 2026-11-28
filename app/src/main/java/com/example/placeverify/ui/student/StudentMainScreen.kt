@@ -6,6 +6,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Assignment
 import androidx.compose.material.icons.filled.Bookmark
 import androidx.compose.material.icons.filled.Home
+import androidx.compose.material.icons.filled.School
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -22,6 +23,7 @@ sealed class StudentTab(val route: String, val title: String, val icon: ImageVec
     object Saved : StudentTab("saved", "Saved", Icons.Default.Bookmark)
     object Applications : StudentTab("applications", "Applications", Icons.AutoMirrored.Filled.Assignment)
     object Notifications : StudentTab("notifications", "Alerts", Icons.Default.Notifications)
+    object Interview : StudentTab("interview", "Interview", Icons.Default.School)
 }
 
 @Composable
@@ -34,6 +36,7 @@ fun StudentMainScreen(
         StudentTab.Home,
         StudentTab.Saved,
         StudentTab.Applications,
+        StudentTab.Interview,
         StudentTab.Notifications
     )
     val repository = remember { PlaceVerifyRepository() }
@@ -48,7 +51,8 @@ fun StudentMainScreen(
     }
 
     LaunchedEffect(selectedTab) {
-        opportunities = repository.getOpportunities()
+        val savedIds = try { repository.savedPlacementIds() } catch (_: Exception) { emptySet() }
+        opportunities = repository.getOpportunities().map { it.copy(isSaved = it.id in savedIds) }
         applications = repository.getApplications()
         notifications = repository.getNotifications()
     }
@@ -92,6 +96,7 @@ fun StudentMainScreen(
                 is StudentTab.Notifications -> StudentNotificationsScreen(
                     notifications = notifications
                 )
+                is StudentTab.Interview -> InterviewPreparationScreen(repository)
             }
         }
     }

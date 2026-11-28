@@ -1,0 +1,6 @@
+﻿const {initializeApp}=require('firebase-admin/app');const {getFirestore,FieldValue}=require('firebase-admin/firestore');
+if(process.env.FIRESTORE_EMULATOR_HOST!=='127.0.0.1:8080')throw Error('Emulator only');
+initializeApp({projectId:'placeverify-845fc'});const db=getFirestore();
+(async()=>{const kit=db.collection('preparationKits').doc('quota-check-local');const job=db.collection('researchJobs').doc();await kit.set({companyId:'quota-check',collegeId:'local-college',companyName:'TCS',role:'Software Developer',status:'QUEUED',jobId:job.id,updatedAt:FieldValue.serverTimestamp()});await job.create({kitId:kit.id,companyId:'quota-check',collegeId:'local-college',companyName:'TCS',role:'Software Developer',status:'QUEUED',createdAt:FieldValue.serverTimestamp()});
+let d;const start=Date.now();while(Date.now()-start<90000){await new Promise(r=>setTimeout(r,2000));d=(await kit.get()).data();if(['QUOTA_EXHAUSTED','FAILED','PARTIAL','COMPLETED'].includes(d.status))break;}
+const j=(await job.get()).data();const state=(await db.collection('researchProviderState').doc('gemini').get()).data();console.log('STATUS='+d.status+' API_CALLS='+(j.apiCalls||0)+' EXHAUSTED='+Boolean(j.exhausted)+' RETRY_AT='+(d.retryAt?.toDate()?.toISOString()||'none')+' SHARED_COOLDOWN='+Boolean(state?.retryAt));process.exit();})().catch(e=>{console.error(e.message);process.exitCode=1});

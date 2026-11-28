@@ -13,3 +13,11 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+/functions/node_modules/
+/functions/.env*
+/.kotlin/
+/functions/firebase-debug.log
+/firebase-debug.log
+/firestore-debug.log
+/functions/.secret.local

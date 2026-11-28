@@ -1,4 +1,4 @@
-package com.example.placeverify.ui.officer
+﻿package com.example.placeverify.ui.officer
 
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -9,7 +9,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import com.example.placeverify.data.PlacementOpportunity
 import com.example.placeverify.data.repository.PlaceVerifyRepository
 import com.example.placeverify.ui.theme.DeepNavy
 import kotlinx.coroutines.launch
@@ -25,6 +24,10 @@ fun CreateAnnouncementScreen(
     var deadline by remember { mutableStateOf("") }
     var eligibility by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
+    var skills by remember { mutableStateOf("") }
+    var recruitmentDate by remember { mutableStateOf("") }
+    var error by remember { mutableStateOf<String?>(null) }
+    var publishing by remember { mutableStateOf(false) }
     var posted by remember { mutableStateOf(false) }
 
     val repository = remember { PlaceVerifyRepository() }
@@ -45,7 +48,7 @@ fun CreateAnnouncementScreen(
             color = DeepNavy
         )
         Text(
-            text = "Submit a verified placement announcement for students",
+            text = "Submit a placement announcement for Super Admin review",
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant
         )
@@ -75,7 +78,7 @@ fun CreateAnnouncementScreen(
             OutlinedTextField(
                 value = ctc,
                 onValueChange = { ctc = it },
-                label = { Text("CTC (e.g. ₹ 20 LPA)") },
+                label = { Text("CTC (e.g. â‚¹ 20 LPA)") },
                 modifier = Modifier.weight(1f),
                 shape = RoundedCornerShape(12.dp),
                 singleLine = true
@@ -117,29 +120,25 @@ fun CreateAnnouncementScreen(
             shape = RoundedCornerShape(12.dp)
         )
 
+        OutlinedTextField(value = skills, onValueChange = { skills = it }, label = { Text("Required skills") }, modifier = Modifier.fillMaxWidth())
+        OutlinedTextField(value = recruitmentDate, onValueChange = { recruitmentDate = it }, label = { Text("Recruitment date") }, modifier = Modifier.fillMaxWidth())
+        error?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+
         Spacer(modifier = Modifier.height(8.dp))
 
         Button(
             onClick = {
                 if (companyName.isNotBlank() && title.isNotBlank()) {
                     coroutineScope.launch {
-                        val newOpp = PlacementOpportunity(
-                            id = System.currentTimeMillis().toString(),
-                            title = title,
-                            companyName = companyName,
-                            location = location.ifBlank { "Remote / Multi-location" },
-                            ctc = ctc.ifBlank { "₹ 18.0 LPA" },
-                            roleType = "Full-time",
-                            deadline = deadline.ifBlank { "30 May 2025" },
-                            credibilityScore = 98,
-                            isVerified = true,
-                            verificationEvidence = "Verified by Placement Officer campus portal handshake.",
-                            eligibilityCriteria = eligibility.ifBlank { "All streams CGPA >= 7.0" },
-                            description = description.ifBlank { "Exciting career opportunity verified by university TPO." }
-                        )
-                        repository.addOpportunity(newOpp)
-                        posted = true
-                        onPostSuccess()
+                        publishing = true
+                        error = null
+                        try {
+                            repository.publishDrive(mapOf("companyName" to companyName, "role" to title, "location" to location, "package" to ctc, "deadline" to deadline, "eligibility" to eligibility, "skills" to skills, "recruitmentDate" to recruitmentDate, "details" to description))
+                            posted = true
+                            onPostSuccess()
+                        } catch (e: Exception) {
+                            error = e.localizedMessage ?: "Could not publish the drive."
+                        } finally { publishing = false }
                     }
                 }
             },
@@ -147,10 +146,11 @@ fun CreateAnnouncementScreen(
                 .fillMaxWidth()
                 .height(50.dp),
             shape = RoundedCornerShape(12.dp),
+            enabled = !publishing && companyName.isNotBlank() && title.isNotBlank(),
             colors = ButtonDefaults.buttonColors(containerColor = DeepNavy)
         ) {
             Text(
-                text = if (posted) "Drive Posted Successfully ✓" else "Publish Verified Announcement",
+                text = if (posted) "Submitted for Review âœ“" else "Submit for Verification",
                 style = MaterialTheme.typography.titleMedium.copy(
                     fontWeight = FontWeight.Bold
                 ),
@@ -159,3 +159,4 @@ fun CreateAnnouncementScreen(
         }
     }
 }
+
